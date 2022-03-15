@@ -63,6 +63,21 @@ func check(e error) {
 	}
 }
 
+func setupRouter() *gin.Engine {
+	router := gin.New()
+
+	router.POST("/readme", createReadme)
+	router.GET("/readme/:id", getReadme)
+	router.PUT("/readme/:id/header", addHeader)
+	router.PUT("/readme/:id/code", addCode)
+	router.PUT("/readme/:id/blockquote", addBlockquote)
+	router.PUT("/readme/:id/link", addLink)
+	router.PUT("/readme/:id/image", addImage)
+	router.POST("/readme/:id/file", createReadmeFile)
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	return router
+}
+
 // @title           Survey Voting API
 // @version         1.0
 // @description     This is a Survey Voting API
@@ -74,17 +89,7 @@ func check(e error) {
 // @host      localhost:8080
 // @BasePath  /
 func main() {
-	router := gin.Default()
-
-	router.POST("/readme", createReadme)
-	router.GET("/readme/:id", getReadme)
-	router.PUT("/readme/:id/header", addHeader)
-	router.PUT("/readme/:id/code", addCode)
-	router.PUT("/readme/:id/blockquote", addBlockquote)
-	router.PUT("/readme/:id/link", addLink)
-	router.PUT("/readme/:id/image", addImage)
-	router.POST("/readme/:id/file", createReadmeFile)
-	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	router := setupRouter()
 
 	router.Run("localhost:8080")
 }
@@ -122,6 +127,11 @@ func createReadmeFile(c *gin.Context) {
 
 func getReadme(c *gin.Context) {
 	readmeId := c.Param("id")
+
+	if len(readmeDB[readmeId]) < 1 {
+		c.IndentedJSON(http.StatusNotFound, HttpErrorMessage{MESSAGE: "could not find readme"})
+		return
+	}
 
 	c.IndentedJSON(http.StatusOK, readmeDB[readmeId])
 }
