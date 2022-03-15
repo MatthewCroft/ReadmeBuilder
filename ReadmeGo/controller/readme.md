@@ -1,1 +1,0 @@
-```go func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n```
