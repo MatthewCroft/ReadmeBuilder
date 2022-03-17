@@ -27,32 +27,32 @@ var codeLanguageMap = map[string]bool{
 }
 
 type HttpErrorMessage struct {
-	MESSAGE string `json:"message"`
+	MESSAGE string `json:"message" binding:"required"`
 }
 
 type MarkDownRequest struct {
-	MDTYPE  string   `json:"mdtype"`
-	MDVALUE []string `json:"mdvalue"`
+	MDTYPE  string   `json:"mdtype" binding:"required"`
+	MDVALUE []string `json:"mdvalue" binding:"required"`
 }
 
 type ReadmeResponse struct {
-	NAME   string   `json:"name"`
-	VALUES []string `json:"values"`
+	NAME   string   `json:"name" binding:"required"`
+	VALUES []string `json:"values" binding:"required"`
 }
 
 type AddHeaderRequest struct {
-	HEADER_TYPE string `json:"header_type"`
-	VALUE       string `json:"value"`
+	HEADER_TYPE string `json:"header_type" binding:"required"`
+	VALUE       string `json:"value" binding:"required"`
 }
 
 type AddCodeRequest struct {
-	CODE_LANGUAGE string `json:"code_language"`
-	VALUE         string `json:"value"`
+	CODE_LANGUAGE string `json:"code_language" binding:"required"`
+	VALUE         string `json:"value" binding:"required"`
 }
 
 type AddLinkRequest struct {
-	DESCRIPTION string `json:"description"`
-	LINK        string `json:"link"`
+	DESCRIPTION string `json:"description" binding:"required"`
+	LINK        string `json:"link" binding:"required"`
 }
 
 var readmeDB = make(map[string][]string)
@@ -145,13 +145,18 @@ func addHeader(c *gin.Context) {
 		return
 	}
 
+	if len(readmeDB[readmeId]) < 1 {
+		c.IndentedJSON(http.StatusNotFound, HttpErrorMessage{MESSAGE: "could not find readme"})
+		return
+	}
+
 	headerMarkdown := markdownSyntaxMap[addHeaderRequest.HEADER_TYPE]
 
 	createdString := headerMarkdown + addHeaderRequest.VALUE + "\n"
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdString)
 
-	c.IndentedJSON(http.StatusOK, createdString)
+	c.IndentedJSON(http.StatusOK, gin.H{"message": createdString})
 }
 
 func addCode(c *gin.Context) {
@@ -163,12 +168,17 @@ func addCode(c *gin.Context) {
 		return
 	}
 
+	if len(readmeDB[readmeId]) < 1 {
+		c.IndentedJSON(http.StatusNotFound, HttpErrorMessage{MESSAGE: "could not find readme"})
+		return
+	}
+
 	if codeLanguageMap[addCodeRequest.CODE_LANGUAGE] {
 		createdCodeString := markdownSyntaxMap["CODE"] + addCodeRequest.CODE_LANGUAGE + "\n " + addCodeRequest.VALUE + "```" + "\n"
 
 		readmeDB[readmeId] = append(readmeDB[readmeId], createdCodeString)
 
-		c.IndentedJSON(http.StatusOK, createdCodeString)
+		c.IndentedJSON(http.StatusOK, gin.H{"message": createdCodeString})
 		return
 	}
 
@@ -188,7 +198,7 @@ func addBlockquote(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdBlockquote)
 
-	c.IndentedJSON(http.StatusOK, createdBlockquote)
+	c.IndentedJSON(http.StatusOK, gin.H{"message": createdBlockquote})
 }
 
 func addLink(c *gin.Context) {
@@ -208,7 +218,7 @@ func addLink(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdLink)
 
-	c.IndentedJSON(http.StatusOK, createdLink)
+	c.IndentedJSON(http.StatusOK, gin.H{"message": createdLink})
 }
 
 func addImage(c *gin.Context) {
@@ -228,5 +238,5 @@ func addImage(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdImage)
 
-	c.IndentedJSON(http.StatusOK, createdImage)
+	c.IndentedJSON(http.StatusOK, gin.H{"message": createdImage})
 }
