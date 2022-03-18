@@ -10,6 +10,7 @@ import (
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
+// change to heading map
 var markdownSyntaxMap = map[string]string{
 	"SMALL_HEADING":  "### ",
 	"MEDIUM_HEADING": "## ",
@@ -63,6 +64,9 @@ func check(e error) {
 	}
 }
 
+//tables
+//definition lists
+//paragraph
 func setupRouter() *gin.Engine {
 	router := gin.New()
 

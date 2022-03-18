@@ -34,7 +34,7 @@ func TestGetReadme(t *testing.T) {
 	require.JSONEq(t, emptyReadme, w.Body.String())
 }
 
-func TestGetReadmeReturnsNotFound(t *testing.T) {
+func TestGetReadmeReturnsNotFoundReadme(t *testing.T) {
 	router := setupRouter()
 	w := httptest.NewRecorder()
 
@@ -63,7 +63,7 @@ func TestAddHeader(t *testing.T) {
 	require.JSONEq(t, string(`{ "message": "### My first header\n"}`), r.Body.String())
 }
 
-func TestAddHeaderReturnsNotFound(t *testing.T) {
+func TestAddHeaderReturnsNotFoundReadme(t *testing.T) {
 	router := setupRouter()
 	r := httptest.NewRecorder()
 
@@ -96,31 +96,49 @@ func TestAddHeaderReturnsIncorrectRequestBody(t *testing.T) {
 }
 
 // TODO: fix test to return bytes, having trouble with ```
-func TestAddCode(t *testing.T) {
+// func TestAddCode(t *testing.T) {
+// 	router := setupRouter()
+// 	w := httptest.NewRecorder()
+// 	r := httptest.NewRecorder()
+
+// 	value := "`" + "```go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n```\n" + "`"
+
+// 	req1, _ := http.NewRequest("POST", "/readme?name=5", nil)
+// 	router.ServeHTTP(w, req1)
+
+// 	headerRequest := []byte(`{
+// 		"code_language": "go",
+// 		"value": `"func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n"`
+// 	}`)
+
+// 	req2, _ := http.NewRequest("PUT", "/readme/5/code", bytes.NewBuffer(headerRequest))
+// 	router.ServeHTTP(r, req2)
+
+// 	// message := "  \"```" + "go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n" + "```\""
+// 	// ans := "{" + `"message": "` + bytes[]{"```go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n```\n" + "}"
+
+// 	// fmt.Println(r.Body)
+// 	// fmt.Println(ans)
+
+// 	if gin.H{"": ""} != r.Body {
+// 		t.Fatalf("Code was not added to the readme correctly")
+// 	}
+// }
+
+func TestAddBlockquote(t *testing.T) {
 	router := setupRouter()
 	w := httptest.NewRecorder()
 	r := httptest.NewRecorder()
 
-	value := "`" + "```go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n```\n" + "`"
-
-	req1, _ := http.NewRequest("POST", "/readme?name=5", nil)
+	req1, _ := http.NewRequest("POST", "/readme?name=7", nil)
 	router.ServeHTTP(w, req1)
 
-	headerRequest := []byte(`{
-		"code_language": "go",
-		"value": `"func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n"`
-	}`)
-
-	req2, _ := http.NewRequest("PUT", "/readme/5/code", bytes.NewBuffer(headerRequest))
+	req2, _ := http.NewRequest("PUT", "/readme/7/blockquote?blockquote=This is an important Quote", nil)
 	router.ServeHTTP(r, req2)
 
-	// message := "  \"```" + "go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n" + "```\""
-	// ans := "{" + `"message": "` + bytes[]{"```go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n```\n" + "}"
+	require.JSONEq(t, string(`{ "message": "> This is an important Quote\n" }`), r.Body.String())
+}
 
-	// fmt.Println(r.Body)
-	// fmt.Println(ans)
+func TestAddBlockquoteReturnsNotFoundReadme(t *testing.T) {
 
-	if gin.H{"": ""} != r.Body {
-		t.Fatalf("Code was not added to the readme correctly")
-	}
 }
