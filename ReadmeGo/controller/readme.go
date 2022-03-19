@@ -53,6 +53,11 @@ type AddLinkRequest struct {
 	LINK        string `json:"link" binding:"required"`
 }
 
+type AddTableRequest struct {
+	COLUMN_NAMES  []string            `json:"column_names" binding:"required"`
+	COLUMN_VALUES map[string][]string `json:"column_values" binding:"required"`
+}
+
 var readmeDB = make(map[string][]string)
 
 func check(e error) {
@@ -70,10 +75,12 @@ func setupRouter() *gin.Engine {
 	router.POST("/readme", createReadme)
 	router.GET("/readme/:id", getReadme)
 	router.PUT("/readme/:id/header", addHeader)
+	router.PUT("/readme/:id/paragraph", addParagraph)
 	router.PUT("/readme/:id/code", addCode)
 	router.PUT("/readme/:id/blockquote", addBlockquote)
 	router.PUT("/readme/:id/link", addLink)
 	router.PUT("/readme/:id/image", addImage)
+	router.PUT("/readme/:id/table", addTable)
 	router.POST("/readme/:id/file", createReadmeFile)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router
@@ -158,6 +165,25 @@ func addHeader(c *gin.Context) {
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdString)
 
 	c.IndentedJSON(http.StatusOK, gin.H{"message": createdString})
+}
+
+func addParagraph(c *gin.Context) {
+	readmeId := c.Param("id")
+	paragraph := c.Query("paragraph")
+
+	if len(readmeDB[readmeId]) < 1 {
+		c.IndentedJSON(http.StatusNotFound, HttpErrorMessage{MESSAGE: "could not find readme"})
+		return
+	}
+
+	if strings.TrimSpace(paragraph) == "" {
+		c.IndentedJSON(http.StatusBadRequest, HttpErrorMessage{MESSAGE: "paragraph cannot be empty"})
+	}
+
+	paragraph = paragraph + "\n"
+
+	readmeDB[readmeId] = append(readmeDB[readmeId], paragraph)
+
 }
 
 func addCode(c *gin.Context) {
@@ -247,4 +273,59 @@ func addImage(c *gin.Context) {
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdImage)
 
 	c.IndentedJSON(http.StatusOK, gin.H{"message": createdImage})
+}
+
+//TODO: finish addtable
+//find largest column values, iterate through make sure dont go
+//out of bounds on array
+func addTable(c *gin.Context) {
+	readmeId := c.Param("id")
+	var addTableRequest AddTableRequest
+
+	if err := c.BindJSON(&addTableRequest); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, HttpErrorMessage{MESSAGE: "incorrect request body, should be AddTableRequest body"})
+		return
+	}
+
+	if len(readmeDB[readmeId]) < 1 {
+		c.IndentedJSON(http.StatusNotFound, HttpErrorMessage{MESSAGE: "could not find readme"})
+		return
+	}
+
+	largestColumn := 0
+	createdTableString := `|`
+
+	//create column label row
+	for _, cName := range addTableRequest.COLUMN_NAMES {
+		if len(addTableRequest.COLUMN_VALUES[cName]) > largestColumn {
+			largestColumn = len(addTableRequest.COLUMN_VALUES[cName])
+		}
+		createdTableString = createdTableString + cName + `|`
+	}
+
+	createdTableString = createdTableString + "\n" + `|`
+
+	// create separated between column label and column values
+	for i := 0; i < len(addTableRequest.COLUMN_NAMES); i++ {
+		createdTableString = createdTableString + ` --- |`
+	}
+
+	createdTableString = createdTableString + "\n"
+
+	// values in each column
+	for i := 0; i < largestColumn; i++ {
+		currentString := `|`
+		for _, column_name := range addTableRequest.COLUMN_NAMES {
+			if i < len(addTableRequest.COLUMN_VALUES[column_name]) {
+				currentString = currentString + addTableRequest.COLUMN_VALUES[column_name][i] + `|`
+			} else {
+				currentString = currentString + " " + `|`
+			}
+		}
+		createdTableString = createdTableString + currentString + "\n"
+	}
+
+	readmeDB[readmeId] = append(readmeDB[readmeId], createdTableString)
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message": createdTableString})
 }

@@ -256,11 +256,68 @@ func TestAddImageReturnsIncorrectRequestBody(t *testing.T) {
 	var headerRequest = []byte(`{
 	}`)
 
-	req1, _ := http.NewRequest("POST", "/readme?name=14", nil)
+	req1, _ := http.NewRequest("POST", "/readme?name=16", nil)
 	router.ServeHTTP(w, req1)
 
-	req2, _ := http.NewRequest("PUT", "/readme/14/link", bytes.NewBuffer(headerRequest))
+	req2, _ := http.NewRequest("PUT", "/readme/16/link", bytes.NewBuffer(headerRequest))
 	router.ServeHTTP(r, req2)
 
 	require.JSONEq(t, string(`{ "message":"incorrect request body, should be AddLinkRequest body" }`), r.Body.String())
+}
+
+func TestAddTable(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+		"column_names": ["c1", "c2"],
+		"column_values": {
+			"c1": ["value1", "value2"],
+			"c2": ["value3", "value4"]
+		}
+	}`)
+
+	req1, _ := http.NewRequest("POST", "/readme?name=17", nil)
+	router.ServeHTTP(w, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/17/table", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{"message":"|c1|c2|\n| --- | --- |\n|value1|value3|\n|value2|value4|\n"}`), r.Body.String())
+}
+
+func TestAddTableReturnsIncorrectRequestBody(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+	}`)
+
+	req1, _ := http.NewRequest("POST", "/readme?name=18", nil)
+	router.ServeHTTP(w, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/18/table", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{"message":"incorrect request body, should be AddTableRequest body"}`), r.Body.String())
+}
+
+func TestAddTableReturnsReadmeNotFound(t *testing.T) {
+	router := setupRouter()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+		"column_names": ["c1", "c2"],
+		"column_values": {
+			"c1": ["value1", "value2"],
+			"c2": ["value3", "value4"]
+		}
+	}`)
+
+	req2, _ := http.NewRequest("PUT", "/readme/19/table", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{"message":"could not find readme"}`), r.Body.String())
 }
