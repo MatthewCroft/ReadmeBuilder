@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
@@ -11,14 +12,10 @@ import (
 )
 
 // change to heading map
-var markdownSyntaxMap = map[string]string{
+var headingSyntaxMap = map[string]string{
 	"SMALL_HEADING":  "### ",
 	"MEDIUM_HEADING": "## ",
 	"LARGE_HEADING":  "# ",
-	"BLOCKQUOTE":     "> ",
-	"CODE":           "```",
-	"LINK":           "[]() ",
-	"IMAGE":          "![]() ",
 }
 
 var codeLanguageMap = map[string]bool{
@@ -154,7 +151,7 @@ func addHeader(c *gin.Context) {
 		return
 	}
 
-	headerMarkdown := markdownSyntaxMap[addHeaderRequest.HEADER_TYPE]
+	headerMarkdown := headingSyntaxMap[addHeaderRequest.HEADER_TYPE]
 
 	createdString := headerMarkdown + addHeaderRequest.VALUE + "\n"
 
@@ -178,7 +175,7 @@ func addCode(c *gin.Context) {
 	}
 
 	if codeLanguageMap[addCodeRequest.CODE_LANGUAGE] {
-		createdCodeString := markdownSyntaxMap["CODE"] + addCodeRequest.CODE_LANGUAGE + "\n " + addCodeRequest.VALUE + "```" + "\n"
+		createdCodeString := "```" + addCodeRequest.CODE_LANGUAGE + "\n " + addCodeRequest.VALUE + "```" + "\n"
 
 		readmeDB[readmeId] = append(readmeDB[readmeId], createdCodeString)
 
@@ -193,7 +190,12 @@ func addBlockquote(c *gin.Context) {
 	readmeId := c.Param("id")
 	message := c.Query("blockquote")
 
-	createdBlockquote := markdownSyntaxMap["BLOCKQUOTE"] + message + "\n"
+	if strings.TrimSpace(message) == "" {
+		c.IndentedJSON(http.StatusBadRequest, HttpErrorMessage{MESSAGE: "blockquote cannot be empty"})
+		return
+	}
+
+	createdBlockquote := "> " + message + "\n"
 
 	if len(readmeDB[readmeId]) < 1 {
 		c.IndentedJSON(http.StatusNotFound, HttpErrorMessage{MESSAGE: "could not find readme"})
@@ -211,6 +213,7 @@ func addLink(c *gin.Context) {
 
 	if err := c.BindJSON(&addLinkRequest); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, HttpErrorMessage{MESSAGE: "incorrect request body, should be AddLinkRequest body"})
+		return
 	}
 
 	if len(readmeDB[readmeId]) < 1 {
@@ -231,6 +234,7 @@ func addImage(c *gin.Context) {
 
 	if err := c.BindJSON(&addImageRequest); err != nil {
 		c.IndentedJSON(http.StatusBadRequest, HttpErrorMessage{MESSAGE: "incorrect request body, should be AddLinkRequest body"})
+		return
 	}
 
 	if len(readmeDB[readmeId]) < 1 {

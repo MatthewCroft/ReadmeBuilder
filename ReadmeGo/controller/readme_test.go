@@ -140,5 +140,127 @@ func TestAddBlockquote(t *testing.T) {
 }
 
 func TestAddBlockquoteReturnsNotFoundReadme(t *testing.T) {
+	router := setupRouter()
+	r := httptest.NewRecorder()
 
+	req1, _ := http.NewRequest("PUT", "/readme/10/blockquote?blockquote=This is an important Quote", nil)
+	router.ServeHTTP(r, req1)
+
+	require.JSONEq(t, string(`{ "message":"could not find readme" }`), r.Body.String())
+}
+
+func TestAddBlockquoteReturnsEmptyBlockquote(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRecorder()
+
+	req1, _ := http.NewRequest("POST", "/readme?name=11", nil)
+	router.ServeHTTP(w, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/11/blockquote?blockquote=", nil)
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{ "message":"blockquote cannot be empty" }`), r.Body.String())
+}
+
+func TestAddLink(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+		"link": "https://go.dev/doc/",
+		"description": "Go Dev"
+	}`)
+
+	req1, _ := http.NewRequest("POST", "/readme?name=12", nil)
+	router.ServeHTTP(w, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/12/link", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{ "message": "[Go Dev](https://go.dev/doc/)\n" }`), r.Body.String())
+}
+
+func TestAddLinkReturnsReadmeNotFound(t *testing.T) {
+	router := setupRouter()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+		"link": "https://go.dev/doc/",
+		"description": "Go Dev"
+	}`)
+
+	req1, _ := http.NewRequest("PUT", "/readme/INVALID/link", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req1)
+
+	require.JSONEq(t, string(`{"message":"could not find readme"}`), r.Body.String())
+}
+
+func TestAddLinkReturnsIncorrectRequestBody(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+	}`)
+
+	req1, _ := http.NewRequest("POST", "/readme?name=13", nil)
+	router.ServeHTTP(w, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/13/link", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{"message":"incorrect request body, should be AddLinkRequest body"}`), r.Body.String())
+}
+
+func TestAddImage(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+		"link": "https://imgur.com/grhk1rU",
+		"description": "Metamask"
+	}`)
+
+	req1, _ := http.NewRequest("POST", "/readme?name=14", nil)
+	router.ServeHTTP(w, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/14/link", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{ "message":"[Metamask](https://imgur.com/grhk1rU)\n" }`), r.Body.String())
+}
+
+func TestAddImageReturnsReadmeNotFound(t *testing.T) {
+	router := setupRouter()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+		"link": "https://imgur.com/grhk1rU",
+		"description": "Metamask"
+	}`)
+
+	req2, _ := http.NewRequest("PUT", "/readme/15/link", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{ "message":"could not find readme" }`), r.Body.String())
+}
+
+func TestAddImageReturnsIncorrectRequestBody(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	r := httptest.NewRecorder()
+
+	var headerRequest = []byte(`{
+	}`)
+
+	req1, _ := http.NewRequest("POST", "/readme?name=14", nil)
+	router.ServeHTTP(w, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/14/link", bytes.NewBuffer(headerRequest))
+	router.ServeHTTP(r, req2)
+
+	require.JSONEq(t, string(`{ "message":"incorrect request body, should be AddLinkRequest body" }`), r.Body.String())
 }
