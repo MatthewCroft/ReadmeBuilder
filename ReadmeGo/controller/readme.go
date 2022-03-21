@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -82,6 +83,7 @@ func setupRouter() *gin.Engine {
 	router.PUT("/readme/:id/image", addImage)
 	router.PUT("/readme/:id/table", addTable)
 	router.POST("/readme/:id/file", createReadmeFile)
+	router.GET("/readme/:id/decode", decodeReadme)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router
 }
@@ -144,6 +146,29 @@ func getReadme(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, readmeDB[readmeId])
 }
 
+// change to read file from s3
+func decodeReadme(c *gin.Context) {
+	readmeId := c.Param("id")
+
+	if len(readmeDB[readmeId]) < 1 {
+		c.IndentedJSON(http.StatusNotFound, HttpErrorMessage{MESSAGE: "could not find readme"})
+		return
+	}
+
+	readme := readmeDB[readmeId]
+
+	currentReadmeDecoded := ``
+	for _, line := range readme {
+		decodedReadmeLine, err := strconv.Unquote(`"` + line + `"`)
+		if err != nil {
+			panic(err)
+		}
+		currentReadmeDecoded = currentReadmeDecoded + decodedReadmeLine
+	}
+
+	c.IndentedJSON(http.StatusOK, gin.H{"message": currentReadmeDecoded})
+}
+
 func addHeader(c *gin.Context) {
 	readmeId := c.Param("id")
 	var addHeaderRequest AddHeaderRequest
@@ -178,12 +203,14 @@ func addParagraph(c *gin.Context) {
 
 	if strings.TrimSpace(paragraph) == "" {
 		c.IndentedJSON(http.StatusBadRequest, HttpErrorMessage{MESSAGE: "paragraph cannot be empty"})
+		return
 	}
 
 	paragraph = paragraph + "\n"
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], paragraph)
 
+	c.IndentedJSON(http.StatusOK, gin.H{"message": paragraph})
 }
 
 func addCode(c *gin.Context) {

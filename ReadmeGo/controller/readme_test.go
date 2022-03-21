@@ -2,8 +2,10 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -320,4 +322,54 @@ func TestAddTableReturnsReadmeNotFound(t *testing.T) {
 	router.ServeHTTP(r, req2)
 
 	require.JSONEq(t, string(`{"message":"could not find readme"}`), r.Body.String())
+}
+
+func TestAddParagraph(t *testing.T) {
+	router := setupRouter()
+	r := httptest.NewRecorder()
+	w := httptest.NewRecorder()
+
+	req1, _ := http.NewRequest("POST", "/readme?name=20", nil)
+	router.ServeHTTP(r, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/20/paragraph?paragraph=I want this to be a paragraph that will be created for the app", nil)
+	router.ServeHTTP(w, req2)
+
+	require.JSONEq(t, string(`{"message":"I want this to be a paragraph that will be created for the app\n"}`), w.Body.String())
+}
+
+func TestAddParagraphReturnsReadmeNotFound(t *testing.T) {
+	router := setupRouter()
+	r := httptest.NewRecorder()
+
+	req1, _ := http.NewRequest("PUT", "/readme/21/paragraph?paragraph=I want this to be a paragraph that will be created for the app", nil)
+	router.ServeHTTP(r, req1)
+
+	require.JSONEq(t, string(`{"message":"could not find readme"}`), r.Body.String())
+}
+
+func TestAddParagraphReturnsEmptyParagraph(t *testing.T) {
+	router := setupRouter()
+	r := httptest.NewRecorder()
+	w := httptest.NewRecorder()
+
+	req1, _ := http.NewRequest("POST", "/readme?name=22", nil)
+	router.ServeHTTP(r, req1)
+
+	req2, _ := http.NewRequest("PUT", "/readme/22/paragraph?paragraph=  ", nil)
+	router.ServeHTTP(w, req2)
+
+	require.JSONEq(t, string(`{"message": "paragraph cannot be empty"}`), w.Body.String())
+}
+
+func TestHell(t *testing.T) {
+	temp := `Hello\nWorld`
+
+	fmt.Println(temp)
+
+	temp2, err := strconv.Unquote(`"` + temp + `"`)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(temp2)
 }
