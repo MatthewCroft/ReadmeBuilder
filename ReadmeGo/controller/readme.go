@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	ginSwagger "github.com/swaggo/gin-swagger" // gin-swagger middleware
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
-// change to heading map
 var headingSyntaxMap = map[string]string{
 	"SMALL_HEADING":  "### ",
 	"MEDIUM_HEADING": "## ",
@@ -25,7 +25,13 @@ var codeLanguageMap = map[string]bool{
 	"json": true,
 }
 
+var id = 0
+
 type HttpErrorMessage struct {
+	MESSAGE string `json:"message" binding:"required"`
+}
+
+type HttpMessage struct {
 	MESSAGE string `json:"message" binding:"required"`
 }
 
@@ -67,9 +73,7 @@ func check(e error) {
 	}
 }
 
-//tables
-//definition lists
-//paragraph
+// TODO: definition lists
 func setupRouter() *gin.Engine {
 	router := gin.New()
 
@@ -83,19 +87,17 @@ func setupRouter() *gin.Engine {
 	router.PUT("/readme/:id/image", addImage)
 	router.PUT("/readme/:id/table", addTable)
 	router.POST("/readme/:id/file", createReadmeFile)
-	router.GET("/readme/:id/decode", decodeReadme)
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	return router
 }
 
-// @title           Survey Voting API
+// @title           ReadmeBuilder API
 // @version         1.0
-// @description     This is a Survey Voting API
+// @description     This is a API to be used for creating markdown files
 // @contact.name   Matthew Croft
 // @contact.url    https://www.linkedin.com/in/matthew-croft-44a5a5b3/
 // @license.name  Apache 2.0
 // @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
 // @host      localhost:8080
 // @BasePath  /
 func main() {
@@ -104,16 +106,42 @@ func main() {
 	router.Run("localhost:8080")
 }
 
-// create constants
-// write test
-// produce file
-
+// CreateReadme godoc
+// @Summary Creates a readme
+// @Description Creates a readme object can now add markdown elements
+// @Accept json
+// @Produce json
+// @Param	name	query	string	false	"pass a value to create a user defined readmeId"
+// @Success	201		{object}	HttpMessage	"returns a message with the readmeId"
+// @Failure	409		{object}	HttpErrorMessage	"Readme already exists"
+// @Router	/readme	[post]
 func createReadme(c *gin.Context) {
-	readmeName := c.Query("name")
+	var readmeId = ""
 
-	readmeDB[readmeName] = append(readmeDB[readmeName], "")
+	if c.Query("name") == "" {
+		readmeId = uuid.NewString()
+	} else {
+		readmeId = c.Query("name")
+	}
+
+	if len(readmeDB[readmeId]) >= 1 {
+		c.IndentedJSON(http.StatusConflict, HttpErrorMessage{MESSAGE: "Readme with that id already exists"})
+		return
+	}
+
+	readmeDB[readmeId] = append(readmeDB[readmeId], "")
+
+	c.IndentedJSON(http.StatusCreated, HttpMessage{MESSAGE: readmeId})
 }
 
+// CreateReadmeFile godoc
+// @Summary Creates markdown file
+// @Description From all of your previous operations takes the readme and generates the markdown file
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Success 200
+// @Router 	/readme/{id}/file	[post]
 func createReadmeFile(c *gin.Context) {
 	readmeId := c.Param("id")
 	f, err := os.Create("/tmp/readme.md")
@@ -135,6 +163,14 @@ func createReadmeFile(c *gin.Context) {
 	}
 }
 
+// GetReadme godoc
+// @Summary Returns a readme
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Success	200	{array}		string	"list of markdown strings"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Router	/readme/{id}		[get]
 func getReadme(c *gin.Context) {
 	readmeId := c.Param("id")
 
@@ -169,6 +205,17 @@ func decodeReadme(c *gin.Context) {
 	c.IndentedJSON(http.StatusOK, gin.H{"message": currentReadmeDecoded})
 }
 
+// AddHeader godoc
+// @Summary Adds Header
+// @Description Creates a string to be used for a markdown header
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Param	addHeader	body	AddHeaderRequest	true	"request body for header"
+// @Success	200	{object}	HttpMessage	"returns the header markdown string"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Failure 400	{object}	HttpErrorMessage	"incorrect request body"
+// @Router	/readme/{id}/header	[put]
 func addHeader(c *gin.Context) {
 	readmeId := c.Param("id")
 	var addHeaderRequest AddHeaderRequest
@@ -189,9 +236,20 @@ func addHeader(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdString)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"message": createdString})
+	c.IndentedJSON(http.StatusOK, HttpMessage{MESSAGE: createdString})
 }
 
+// AddParagraph godoc
+// @Summary Adds a paragraph
+// @Description Updates readme to have a paragraph
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Param	paragraph	query	string	true	"paragraph you want to add to the readme"
+// @Success	200	{object}	HttpMessage	"returns an paragraph markdown string"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Failure 400	{object}	HttpErrorMessage	"paragraph param cannot be empty"
+// @Router	/readme/{id}/paragraph	[put]
 func addParagraph(c *gin.Context) {
 	readmeId := c.Param("id")
 	paragraph := c.Query("paragraph")
@@ -210,9 +268,21 @@ func addParagraph(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], paragraph)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"message": paragraph})
+	c.IndentedJSON(http.StatusOK, HttpMessage{MESSAGE: paragraph})
 }
 
+// AddCode godoc
+// @Summary Adds code to readme
+// @Description creates a string in markdown code block with the language specified
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Param	codeRequest	body	AddCodeRequest	true	"request for code markdown"
+// @Success	200	{object}	HttpMessage	"returns the created code markdown string"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Failure 400	{object}	HttpErrorMessage	"incorrect request body"
+// @Failure 400	{object}	HttpErrorMessage	"the code language is not suppored"
+// @Router	/readme/{id}/code	[put]
 func addCode(c *gin.Context) {
 	readmeId := c.Param("id")
 	var addCodeRequest AddCodeRequest
@@ -232,13 +302,24 @@ func addCode(c *gin.Context) {
 
 		readmeDB[readmeId] = append(readmeDB[readmeId], createdCodeString)
 
-		c.IndentedJSON(http.StatusOK, gin.H{"message": createdCodeString})
+		c.IndentedJSON(http.StatusOK, HttpMessage{MESSAGE: createdCodeString})
 		return
 	}
 
 	c.IndentedJSON(http.StatusBadRequest, HttpErrorMessage{MESSAGE: "Code language not supported"})
 }
 
+// AddBlockquote godoc
+// @Summary Add Blockquote
+// @Description creates a blockquote markdown string
+// @Accept json
+// @Produce	json
+// @Param	id	path	string	true	"readme id"
+// @Param	paragraph	query	string	true	"string for paragraph markdown"
+// @Success	200	{object}	HttpMessage	"returns created markdown blockquote string"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Failure 400	{object}	HttpErrorMessage	"blockquote can not be empty"
+// @Router	/readme/{id}/blockquote	[put]
 func addBlockquote(c *gin.Context) {
 	readmeId := c.Param("id")
 	message := c.Query("blockquote")
@@ -257,9 +338,20 @@ func addBlockquote(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdBlockquote)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"message": createdBlockquote})
+	c.IndentedJSON(http.StatusOK, HttpMessage{MESSAGE: createdBlockquote})
 }
 
+// AddLink godoc
+// @Summary Add Link
+// @Description	creates a markdown link string
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Param	addLinkRequest	body	AddLinkRequest	true	"request for adding link"
+// @Success	200	{object}	HttpMessage	"returns created markdown link"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Failure 400	{object}	HttpErrorMessage	"incorrect request body"
+// @Router	/readme/{id}/link	[put]
 func addLink(c *gin.Context) {
 	readmeId := c.Param("id")
 	var addLinkRequest AddLinkRequest
@@ -278,9 +370,20 @@ func addLink(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdLink)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"message": createdLink})
+	c.IndentedJSON(http.StatusOK, HttpMessage{MESSAGE: createdLink})
 }
 
+// AddImage godoc
+// @Summary Add Image
+// @Description	creates a markdown image string
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Param	addLinkRequest	body	AddLinkRequest	true	"request body for adding image"
+// @Success	200	{object}	HttpMessage	"returns created markdown image link"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Failure 400	{object}	HttpErrorMessage	"incorrect request body"
+// @Router	/readme/{id}/image	[put]
 func addImage(c *gin.Context) {
 	readmeId := c.Param("id")
 	var addImageRequest AddLinkRequest
@@ -299,12 +402,20 @@ func addImage(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdImage)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"message": createdImage})
+	c.IndentedJSON(http.StatusOK, HttpMessage{MESSAGE: createdImage})
 }
 
-//TODO: finish addtable
-//find largest column values, iterate through make sure dont go
-//out of bounds on array
+// AddTable godoc
+// @Summary Add Table
+// @Description	creates a markdown table as a string
+// @Accept json
+// @Produce json
+// @Param	id	path	string	true	"readme id"
+// @Param	addTableRequest	body	AddTableRequest	true	"request table body"
+// @Success	200	{object}	HttpMessage	"returns table markdown string with values inserted"
+// @Failure 404	{object}	HttpErrorMessage	"could not find readme"
+// @Failure 400	{object}	HttpErrorMessage	"incorrect request body"
+// @Router	/readme/{id}/table	[put]
 func addTable(c *gin.Context) {
 	readmeId := c.Param("id")
 	var addTableRequest AddTableRequest
@@ -354,5 +465,5 @@ func addTable(c *gin.Context) {
 
 	readmeDB[readmeId] = append(readmeDB[readmeId], createdTableString)
 
-	c.IndentedJSON(http.StatusOK, gin.H{"message": createdTableString})
+	c.IndentedJSON(http.StatusOK, HttpMessage{MESSAGE: createdTableString})
 }

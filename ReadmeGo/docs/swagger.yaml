@@ -1,0 +1,368 @@
+basePath: /
+definitions:
+  main.AddCodeRequest:
+    properties:
+      code_language:
+        type: string
+      value:
+        type: string
+    required:
+    - code_language
+    - value
+    type: object
+  main.AddHeaderRequest:
+    properties:
+      header_type:
+        type: string
+      value:
+        type: string
+    required:
+    - header_type
+    - value
+    type: object
+  main.AddLinkRequest:
+    properties:
+      description:
+        type: string
+      link:
+        type: string
+    required:
+    - description
+    - link
+    type: object
+  main.AddTableRequest:
+    properties:
+      column_names:
+        items:
+          type: string
+        type: array
+      column_values:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+        type: object
+    required:
+    - column_names
+    - column_values
+    type: object
+  main.HttpErrorMessage:
+    properties:
+      message:
+        type: string
+    required:
+    - message
+    type: object
+  main.HttpMessage:
+    properties:
+      message:
+        type: string
+    required:
+    - message
+    type: object
+host: localhost:8080
+info:
+  contact:
+    name: Matthew Croft
+    url: https://www.linkedin.com/in/matthew-croft-44a5a5b3/
+  description: This is a API to be used for creating markdown files
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: ReadmeBuilder API
+  version: "1.0"
+paths:
+  /readme:
+    post:
+      consumes:
+      - application/json
+      description: Creates a readme object can now add markdown elements
+      parameters:
+      - description: pass a value to create a user defined readmeId
+        in: query
+        name: name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: returns a message with the readmeId
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "409":
+          description: Readme already exists
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Creates a readme
+  /readme/{id}:
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: list of markdown strings
+          schema:
+            items:
+              type: string
+            type: array
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Returns a readme
+  /readme/{id}/blockquote:
+    put:
+      consumes:
+      - application/json
+      description: creates a blockquote markdown string
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: string for paragraph markdown
+        in: query
+        name: paragraph
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: returns created markdown blockquote string
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "400":
+          description: blockquote can not be empty
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Add Blockquote
+  /readme/{id}/code:
+    put:
+      consumes:
+      - application/json
+      description: creates a string in markdown code block with the language specified
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request for code markdown
+        in: body
+        name: codeRequest
+        required: true
+        schema:
+          $ref: '#/definitions/main.AddCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: returns the created code markdown string
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "400":
+          description: the code language is not suppored
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Adds code to readme
+  /readme/{id}/file:
+    post:
+      consumes:
+      - application/json
+      description: From all of your previous operations takes the readme and generates
+        the markdown file
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Creates markdown file
+  /readme/{id}/header:
+    put:
+      consumes:
+      - application/json
+      description: Creates a string to be used for a markdown header
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request body for header
+        in: body
+        name: addHeader
+        required: true
+        schema:
+          $ref: '#/definitions/main.AddHeaderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: returns the header markdown string
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "400":
+          description: incorrect request body
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Adds Header
+  /readme/{id}/image:
+    put:
+      consumes:
+      - application/json
+      description: creates a markdown image string
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request body for adding image
+        in: body
+        name: addLinkRequest
+        required: true
+        schema:
+          $ref: '#/definitions/main.AddLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: returns created markdown image link
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "400":
+          description: incorrect request body
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Add Image
+  /readme/{id}/link:
+    put:
+      consumes:
+      - application/json
+      description: creates a markdown link string
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request for adding link
+        in: body
+        name: addLinkRequest
+        required: true
+        schema:
+          $ref: '#/definitions/main.AddLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: returns created markdown link
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "400":
+          description: incorrect request body
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Add Link
+  /readme/{id}/paragraph:
+    put:
+      consumes:
+      - application/json
+      description: Updates readme to have a paragraph
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: paragraph you want to add to the readme
+        in: query
+        name: paragraph
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: returns an paragraph markdown string
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "400":
+          description: paragraph param cannot be empty
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Adds a paragraph
+  /readme/{id}/table:
+    put:
+      consumes:
+      - application/json
+      description: creates a markdown table as a string
+      parameters:
+      - description: readme id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request table body
+        in: body
+        name: addTableRequest
+        required: true
+        schema:
+          $ref: '#/definitions/main.AddTableRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: returns table markdown string with values inserted
+          schema:
+            $ref: '#/definitions/main.HttpMessage'
+        "400":
+          description: incorrect request body
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+        "404":
+          description: could not find readme
+          schema:
+            $ref: '#/definitions/main.HttpErrorMessage'
+      summary: Add Table
+swagger: "2.0"

@@ -1,0 +1,556 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "This is a API to be used for creating markdown files",
+        "title": "ReadmeBuilder API",
+        "contact": {
+            "name": "Matthew Croft",
+            "url": "https://www.linkedin.com/in/matthew-croft-44a5a5b3/"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "1.0"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/readme": {
+            "post": {
+                "description": "Creates a readme object can now add markdown elements",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Creates a readme",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "pass a value to create a user defined readmeId",
+                        "name": "name",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "returns a message with the readmeId",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "409": {
+                        "description": "Readme already exists",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Returns a readme",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "list of markdown strings",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}/blockquote": {
+            "put": {
+                "description": "creates a blockquote markdown string",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add Blockquote",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "string for paragraph markdown",
+                        "name": "paragraph",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "returns created markdown blockquote string",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "blockquote can not be empty",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}/code": {
+            "put": {
+                "description": "creates a string in markdown code block with the language specified",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Adds code to readme",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request for code markdown",
+                        "name": "codeRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.AddCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "returns the created code markdown string",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "the code language is not suppored",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}/file": {
+            "post": {
+                "description": "From all of your previous operations takes the readme and generates the markdown file",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Creates markdown file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/readme/{id}/header": {
+            "put": {
+                "description": "Creates a string to be used for a markdown header",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Adds Header",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request body for header",
+                        "name": "addHeader",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.AddHeaderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "returns the header markdown string",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "incorrect request body",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}/image": {
+            "put": {
+                "description": "creates a markdown image string",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add Image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request body for adding image",
+                        "name": "addLinkRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.AddLinkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "returns created markdown image link",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "incorrect request body",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}/link": {
+            "put": {
+                "description": "creates a markdown link string",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add Link",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request for adding link",
+                        "name": "addLinkRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.AddLinkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "returns created markdown link",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "incorrect request body",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}/paragraph": {
+            "put": {
+                "description": "Updates readme to have a paragraph",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Adds a paragraph",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "paragraph you want to add to the readme",
+                        "name": "paragraph",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "returns an paragraph markdown string",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "paragraph param cannot be empty",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        },
+        "/readme/{id}/table": {
+            "put": {
+                "description": "creates a markdown table as a string",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add Table",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "readme id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "request table body",
+                        "name": "addTableRequest",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.AddTableRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "returns table markdown string with values inserted",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpMessage"
+                        }
+                    },
+                    "400": {
+                        "description": "incorrect request body",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    },
+                    "404": {
+                        "description": "could not find readme",
+                        "schema": {
+                            "$ref": "#/definitions/main.HttpErrorMessage"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.AddCodeRequest": {
+            "type": "object",
+            "required": [
+                "code_language",
+                "value"
+            ],
+            "properties": {
+                "code_language": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.AddHeaderRequest": {
+            "type": "object",
+            "required": [
+                "header_type",
+                "value"
+            ],
+            "properties": {
+                "header_type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.AddLinkRequest": {
+            "type": "object",
+            "required": [
+                "description",
+                "link"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "link": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.AddTableRequest": {
+            "type": "object",
+            "required": [
+                "column_names",
+                "column_values"
+            ],
+            "properties": {
+                "column_names": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "column_values": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "main.HttpErrorMessage": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "main.HttpMessage": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        }
+    }
+}

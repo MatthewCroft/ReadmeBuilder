@@ -2,10 +2,8 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -96,36 +94,6 @@ func TestAddHeaderReturnsIncorrectRequestBody(t *testing.T) {
 
 	require.JSONEq(t, string(`{ "message":"incorrect request body, should be AddHeaderRequest body"}`), r.Body.String())
 }
-
-// TODO: fix test to return bytes, having trouble with ```
-// func TestAddCode(t *testing.T) {
-// 	router := setupRouter()
-// 	w := httptest.NewRecorder()
-// 	r := httptest.NewRecorder()
-
-// 	value := "`" + "```go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n```\n" + "`"
-
-// 	req1, _ := http.NewRequest("POST", "/readme?name=5", nil)
-// 	router.ServeHTTP(w, req1)
-
-// 	headerRequest := []byte(`{
-// 		"code_language": "go",
-// 		"value": `"func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n"`
-// 	}`)
-
-// 	req2, _ := http.NewRequest("PUT", "/readme/5/code", bytes.NewBuffer(headerRequest))
-// 	router.ServeHTTP(r, req2)
-
-// 	// message := "  \"```" + "go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n" + "```\""
-// 	// ans := "{" + `"message": "` + bytes[]{"```go\n func createReadme(c *gin.Context) {\r\n\treadmeName := c.Query(\"name\")\r\n\r\n\treadmeDB[readmeName] = append(readmeDB[readmeName], \"\")\r\n}\r\n```\n" + "}"
-
-// 	// fmt.Println(r.Body)
-// 	// fmt.Println(ans)
-
-// 	if gin.H{"": ""} != r.Body {
-// 		t.Fatalf("Code was not added to the readme correctly")
-// 	}
-// }
 
 func TestAddBlockquote(t *testing.T) {
 	router := setupRouter()
@@ -360,16 +328,4 @@ func TestAddParagraphReturnsEmptyParagraph(t *testing.T) {
 	router.ServeHTTP(w, req2)
 
 	require.JSONEq(t, string(`{"message": "paragraph cannot be empty"}`), w.Body.String())
-}
-
-func TestHell(t *testing.T) {
-	temp := `Hello\nWorld`
-
-	fmt.Println(temp)
-
-	temp2, err := strconv.Unquote(`"` + temp + `"`)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(temp2)
 }
